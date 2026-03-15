@@ -1,0 +1,10 @@
+# @genqlient
+query ListLabels($filter: IssueLabelFilter) {
+  issueLabels(filter: $filter) {
+    nodes {
+      id
+      name
+      color
+    }
+  }
+}

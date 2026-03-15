@@ -1,0 +1,148 @@
+# @genqlient
+query ListIssues($filter: IssueFilter, $first: Int, $after: String) {
+  issues(
+    filter: $filter
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      id
+      identifier
+      title
+      description
+      priority
+      priorityLabel
+      estimate
+      dueDate
+      url
+      createdAt
+      updatedAt
+      completedAt
+      archivedAt
+      state { id name type color position }
+      team { id name key }
+      assignee { id name displayName email active }
+      labels { nodes { id name color } }
+      cycle { id name number }
+      project { id name }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+
+# @genqlient
+query GetIssue($id: String!) {
+  issue(id: $id) {
+    id
+    identifier
+    title
+    description
+    priority
+    priorityLabel
+    estimate
+    dueDate
+    url
+    createdAt
+    updatedAt
+    completedAt
+    archivedAt
+    state { id name type color position }
+    team { id name key }
+    assignee { id name displayName email active }
+    labels { nodes { id name color } }
+    cycle { id name number }
+    project { id name }
+    comments {
+      nodes {
+        id
+        body
+        createdAt
+        updatedAt
+        user { id name displayName email active }
+      }
+    }
+  }
+}
+
+# @genqlient
+query SearchIssues($term: String!, $filter: IssueFilter, $first: Int, $after: String, $teamId: String) {
+  searchIssues(
+    term: $term
+    filter: $filter
+    first: $first
+    after: $after
+    teamId: $teamId
+  ) {
+    nodes {
+      id
+      identifier
+      title
+      description
+      priority
+      priorityLabel
+      estimate
+      dueDate
+      url
+      createdAt
+      updatedAt
+      completedAt
+      archivedAt
+      state { id name type color position }
+      team { id name key }
+      assignee { id name displayName email active }
+      labels { nodes { id name color } }
+      cycle { id name number }
+      project { id name }
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+
+# @genqlient
+mutation CreateIssue($input: IssueCreateInput!) {
+  issueCreate(input: $input) {
+    success
+    issue {
+      id
+      identifier
+      title
+      url
+      state { id name type }
+    }
+  }
+}
+
+# @genqlient
+mutation UpdateIssue($id: String!, $input: IssueUpdateInput!) {
+  issueUpdate(id: $id, input: $input) {
+    success
+    issue {
+      id
+      identifier
+      title
+      url
+      state { id name type }
+    }
+  }
+}
+
+# @genqlient
+mutation ArchiveIssue($id: String!) {
+  issueArchive(id: $id) {
+    success
+  }
+}
+
+# @genqlient
+mutation AddIssueLabel($id: String!, $labelId: String!) {
+  issueAddLabel(id: $id, labelId: $labelId) {
+    success
+  }
+}
+
+# @genqlient
+mutation RemoveIssueLabel($id: String!, $labelId: String!) {
+  issueRemoveLabel(id: $id, labelId: $labelId) {
+    success
+  }
+}

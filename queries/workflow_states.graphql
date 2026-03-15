@@ -1,0 +1,12 @@
+# @genqlient
+query ListWorkflowStates($filter: WorkflowStateFilter) {
+  workflowStates(filter: $filter) {
+    nodes {
+      id
+      name
+      type
+      color
+      position
+    }
+  }
+}

@@ -1,0 +1,28 @@
+# @genqlient
+query ListComments($issueId: String!, $first: Int, $after: String) {
+  issue(id: $issueId) {
+    comments(first: $first, after: $after) {
+      nodes {
+        id
+        body
+        createdAt
+        updatedAt
+        user { id name displayName email active }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}
+
+# @genqlient
+mutation CreateComment($issueId: String!, $body: String!) {
+  commentCreate(input: { issueId: $issueId, body: $body }) {
+    success
+    comment {
+      id
+      body
+      createdAt
+      user { id name displayName email active }
+    }
+  }
+}

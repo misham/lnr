@@ -1,0 +1,78 @@
+# @genqlient
+query ListInitiatives($filter: InitiativeFilter, $first: Int, $after: String) {
+  initiatives(
+    filter: $filter
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      id
+      name
+      description
+      slugId
+      color
+      icon
+      status
+      targetDate
+      owner { id name displayName email active }
+      url
+      createdAt
+      updatedAt
+      archivedAt
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+
+# @genqlient
+query GetInitiative($id: String!) {
+  initiative(id: $id) {
+    id
+    name
+    description
+    content
+    slugId
+    color
+    icon
+    status
+    health
+    targetDate
+    startedAt
+    completedAt
+    owner { id name displayName email active }
+    url
+    createdAt
+    updatedAt
+    archivedAt
+  }
+}
+
+# @genqlient
+query ListInitiativeProjects($id: String!, $filter: ProjectFilter, $first: Int, $after: String) {
+  initiative(id: $id) {
+    projects(filter: $filter, first: $first, after: $after) {
+      nodes {
+        id
+        name
+        description
+        slugId
+        color
+        icon
+        status { name color type }
+        progress
+        priority
+        priorityLabel
+        startDate
+        targetDate
+        lead { id name displayName email active }
+        url
+        createdAt
+        updatedAt
+        completedAt
+        canceledAt
+        archivedAt
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+# @genqlient
+query ListCycles($filter: CycleFilter, $first: Int, $after: String) {
+  cycles(
+    filter: $filter
+    first: $first
+    after: $after
+  ) {
+    nodes {
+      id
+      name
+      number
+      description
+      startsAt
+      endsAt
+      completedAt
+      progress
+      isActive
+      isNext
+      isPast
+      team { id name key }
+      createdAt
+      updatedAt
+    }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+
+# @genqlient
+query GetCycle($id: String!) {
+  cycle(id: $id) {
+    id
+    name
+    number
+    description
+    startsAt
+    endsAt
+    completedAt
+    progress
+    isActive
+    isNext
+    isPast
+    team { id name key }
+    createdAt
+    updatedAt
+  }
+}
+
+# @genqlient
+query ListCycleIssues($id: String!, $first: Int, $after: String) {
+  cycle(id: $id) {
+    issues(first: $first, after: $after) {
+      nodes {
+        id
+        identifier
+        title
+        priority
+        priorityLabel
+        state { id name type color position }
+        assignee { id name displayName email active }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}

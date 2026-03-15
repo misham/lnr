@@ -1,0 +1,6 @@
+lnr
+coverage.out
+schema.graphql
+internal/api/generated/
+*.db-shm
+*.db-wal

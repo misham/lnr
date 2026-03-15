@@ -1,0 +1,183 @@
+package cycle
+
+import (
+	"bytes"
+	"context"
+	"io"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/misham/linear-cli/internal/api"
+	"github.com/misham/linear-cli/internal/cmdutil"
+	"github.com/misham/linear-cli/internal/config"
+	"github.com/misham/linear-cli/internal/ui"
+)
+
+type fakeClient struct {
+	cycles             *api.CycleListResult
+	cycle              *api.Cycle
+	issue              *api.Issue
+	updateID           string
+	updateInput        api.IssueUpdateInput
+	removeCycleIssueID string
+	err                error
+}
+
+func (c *fakeClient) ListTeams(_ context.Context) ([]api.Team, error) { return nil, nil }
+func (c *fakeClient) Viewer(_ context.Context) (*api.User, error)     { return nil, nil }
+func (c *fakeClient) ListIssues(_ context.Context, _ string, _ int, _ string) (*api.IssueListResult, error) {
+	return nil, nil
+}
+func (c *fakeClient) GetIssue(_ context.Context, _ string) (*api.Issue, error) { return nil, nil }
+func (c *fakeClient) SearchIssues(_ context.Context, _, _ string, _ int, _ string) (*api.IssueListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) CreateIssue(_ context.Context, _ api.IssueCreateInput) (*api.Issue, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) UpdateIssue(_ context.Context, id string, input api.IssueUpdateInput) (*api.Issue, error) {
+	c.updateID = id
+	c.updateInput = input
+	return c.issue, c.err
+}
+func (c *fakeClient) ArchiveIssue(_ context.Context, _ string) error { return nil }
+func (c *fakeClient) ListWorkflowStates(_ context.Context, _ string) ([]api.WorkflowState, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListComments(_ context.Context, _ string, _ int, _ string) ([]api.Comment, api.PageInfo, error) {
+	return nil, api.PageInfo{}, nil
+}
+
+func (c *fakeClient) CreateComment(_ context.Context, _, _ string) (*api.Comment, error) {
+	return nil, nil
+}
+func (c *fakeClient) AddIssueLabel(_ context.Context, _, _ string) error    { return nil }
+func (c *fakeClient) RemoveIssueLabel(_ context.Context, _, _ string) error { return nil }
+func (c *fakeClient) ListLabels(_ context.Context, _ string) ([]api.IssueLabel, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListCycles(_ context.Context, _ string, _ bool, _ int, _ string) (*api.CycleListResult, error) {
+	return c.cycles, c.err
+}
+
+func (c *fakeClient) GetCycle(_ context.Context, _ string) (*api.Cycle, error) {
+	return c.cycle, c.err
+}
+
+func (c *fakeClient) GetCycleByNumber(_ context.Context, _ string, _ int) (*api.Cycle, error) {
+	return c.cycle, c.err
+}
+
+func (c *fakeClient) GetActiveCycle(_ context.Context, _ string) (*api.Cycle, error) {
+	return c.cycle, c.err
+}
+
+func (c *fakeClient) RemoveIssueCycle(_ context.Context, issueID string) error {
+	c.removeCycleIssueID = issueID
+	return c.err
+}
+
+func (c *fakeClient) ListCycleIssues(_ context.Context, _ string, _ int, _ string) (*api.IssueListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListProjects(_ context.Context, _, _ string, _ int, _ string) (*api.ProjectListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) GetProject(_ context.Context, _ string) (*api.Project, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListProjectIssues(_ context.Context, _ string, _ int, _ string) (*api.IssueListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListInitiatives(_ context.Context, _ string, _ int, _ string) (*api.InitiativeListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) GetInitiative(_ context.Context, _ string) (*api.Initiative, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) ListInitiativeProjects(_ context.Context, _ string, _ int, _ string) (*api.ProjectListResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) FileUpload(_ context.Context, _, _ string, _ int64) (*api.UploadResult, error) {
+	return nil, nil
+}
+
+func (c *fakeClient) UploadToURL(_ context.Context, _ string, _ []api.UploadHeader, _ io.Reader) error {
+	return nil
+}
+
+func (c *fakeClient) DownloadURL(_ context.Context, _ string) (io.ReadCloser, error) {
+	return nil, nil
+}
+
+func newTestFactory(t *testing.T, fc *fakeClient) *cmdutil.Factory {
+	ios := ui.NewTestIOStreams()
+	dir := t.TempDir()
+	store := config.NewViperStore(dir)
+	_ = store.Load()
+	store.SetTeamID("team-1")
+
+	return &cmdutil.Factory{
+		IO: ios,
+		APIClient: func() (api.Client, error) {
+			return fc, nil
+		},
+		Config: func() (config.Store, error) {
+			return store, nil
+		},
+	}
+}
+
+func TestListCmd_ShowsCycles(t *testing.T) {
+	start := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(2026, 3, 14, 0, 0, 0, 0, time.UTC)
+	fc := &fakeClient{
+		cycles: &api.CycleListResult{
+			Cycles: []api.Cycle{
+				{Number: 5, Name: "Sprint 5", IsActive: true, StartsAt: start, EndsAt: end, Progress: 0.75},
+				{Number: 6, Name: "Sprint 6", IsNext: true, StartsAt: end, EndsAt: end.AddDate(0, 0, 14), Progress: 0},
+			},
+		},
+	}
+
+	f := newTestFactory(t, fc)
+	cmd := newListCmd(f)
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+	require.NoError(t, err)
+
+	buf, _ := f.IO.Out.(*bytes.Buffer)
+	assert.Contains(t, buf.String(), "Sprint 5")
+	assert.Contains(t, buf.String(), "Sprint 6")
+}
+
+func TestListCmd_NoCycles(t *testing.T) {
+	fc := &fakeClient{
+		cycles: &api.CycleListResult{Cycles: []api.Cycle{}},
+	}
+
+	f := newTestFactory(t, fc)
+	cmd := newListCmd(f)
+	cmd.SetArgs([]string{})
+
+	err := cmd.Execute()
+	require.NoError(t, err)
+
+	buf, _ := f.IO.Out.(*bytes.Buffer)
+	assert.Contains(t, buf.String(), "No cycles found")
+}

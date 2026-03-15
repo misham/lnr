@@ -1,0 +1,24 @@
+query ListTeams {
+  teams {
+    nodes {
+      id
+      name
+      key
+      description
+      private
+      icon
+      color
+      timezone
+    }
+  }
+}
+
+query Viewer {
+  viewer {
+    id
+    name
+    displayName
+    email
+    active
+  }
+}
