@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Static checks
+        run: make check
+
+      - name: Tests
+        run: make test
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      COMMIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Validate secrets
+        env:
+          LNR_CLIENT_ID: ${{ secrets.LNR_CLIENT_ID }}
+        run: |
+          if [ -z "${LNR_CLIENT_ID}" ]; then
+            echo "ERROR: LNR_CLIENT_ID secret not set"
+            exit 1
+          fi
+
+      - name: Build binary
+        env:
+          LNR_CLIENT_ID: ${{ secrets.LNR_CLIENT_ID }}
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          VERSION="${COMMIT_SHA:0:7}"
+          make build \
+            VERSION="${VERSION}" \
+            COMMIT="${COMMIT_SHA:0:7}" \
+            CLIENT_ID="${LNR_CLIENT_ID}"
+          mv lnr lnr-darwin-arm64
+
+      - name: Generate checksum
+        run: sha256sum lnr-darwin-arm64 > checksums.txt
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${COMMIT_SHA:0:7}"
+          gh release create "${VERSION}" \
+            --title "lnr ${VERSION}" \
+            --generate-notes \
+            lnr-darwin-arm64 \
+            checksums.txt
