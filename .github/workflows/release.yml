@@ -12,31 +12,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-
-      - name: Install tools
-        run: make install-tools
-
-      - name: Static checks
-        run: make check
-
-      - name: Tests
-        run: make test
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
 
   release:
-    needs: check
+    needs: ci
     runs-on: ubuntu-latest
     env:
       COMMIT_SHA: ${{ github.sha }}
+      VERSION: ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v6
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+          run-id: ${{ needs.ci.outputs.artifact-run-id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-go@v6
         with:
@@ -57,7 +50,6 @@ jobs:
           GOOS: darwin
           GOARCH: arm64
         run: |
-          VERSION="${COMMIT_SHA:0:7}"
           make build \
             VERSION="${VERSION}" \
             COMMIT="${COMMIT_SHA:0:7}" \
@@ -71,7 +63,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${COMMIT_SHA:0:7}"
           gh release create "${VERSION}" \
             --title "lnr ${VERSION}" \
             --generate-notes \

@@ -12,7 +12,7 @@ import (
 
 	"github.com/Khan/genqlient/graphql"
 
-	"github.com/misham/linear-cli/internal/api/generated"
+	"github.com/misham/linear-cli/internal/api/linear_graphql"
 )
 
 // ErrNoActiveCycle is returned when no active cycle exists for a team.
@@ -82,7 +82,7 @@ func NewGraphQLClient(endpoint, token string) *GraphQLClient {
 }
 
 func (c *GraphQLClient) ListTeams(ctx context.Context) ([]Team, error) {
-	resp, err := generated.ListTeams(ctx, c.gql)
+	resp, err := linear_graphql.ListTeams(ctx, c.gql)
 	if err != nil {
 		return nil, fmt.Errorf("list teams: %w", err)
 	}
@@ -104,7 +104,7 @@ func (c *GraphQLClient) ListTeams(ctx context.Context) ([]Team, error) {
 }
 
 func (c *GraphQLClient) Viewer(ctx context.Context) (*User, error) {
-	resp, err := generated.Viewer(ctx, c.gql)
+	resp, err := linear_graphql.Viewer(ctx, c.gql)
 	if err != nil {
 		return nil, fmt.Errorf("viewer: %w", err)
 	}
@@ -119,15 +119,15 @@ func (c *GraphQLClient) Viewer(ctx context.Context) (*User, error) {
 }
 
 func (c *GraphQLClient) ListIssues(ctx context.Context, teamID string, first int, after string) (*IssueListResult, error) {
-	var filter *generated.IssueFilter
+	var filter *linear_graphql.IssueFilter
 	if teamID != "" {
-		filter = &generated.IssueFilter{
-			Team: &generated.TeamFilter{
-				Id: &generated.IDComparator{Eq: &teamID},
+		filter = &linear_graphql.IssueFilter{
+			Team: &linear_graphql.TeamFilter{
+				Id: &linear_graphql.IDComparator{Eq: &teamID},
 			},
 		}
 	}
-	resp, err := generated.ListIssues(ctx, c.gql, filter, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListIssues(ctx, c.gql, filter, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list issues: %w", err)
 	}
@@ -171,7 +171,7 @@ func (c *GraphQLClient) ListIssues(ctx context.Context, teamID string, first int
 }
 
 func (c *GraphQLClient) GetIssue(ctx context.Context, id string) (*Issue, error) {
-	resp, err := generated.GetIssue(ctx, c.gql, id)
+	resp, err := linear_graphql.GetIssue(ctx, c.gql, id)
 	if err != nil {
 		return nil, fmt.Errorf("get issue: %w", err)
 	}
@@ -218,7 +218,7 @@ func (c *GraphQLClient) GetIssue(ctx context.Context, id string) (*Issue, error)
 }
 
 func (c *GraphQLClient) SearchIssues(ctx context.Context, term, teamID string, first int, after string) (*IssueListResult, error) {
-	resp, err := generated.SearchIssues(ctx, c.gql, term, &generated.IssueFilter{}, &first, strPtrOrNil(after), strPtrOrNil(teamID))
+	resp, err := linear_graphql.SearchIssues(ctx, c.gql, term, &linear_graphql.IssueFilter{}, &first, strPtrOrNil(after), strPtrOrNil(teamID))
 	if err != nil {
 		return nil, fmt.Errorf("search issues: %w", err)
 	}
@@ -262,7 +262,7 @@ func (c *GraphQLClient) SearchIssues(ctx context.Context, term, teamID string, f
 }
 
 func (c *GraphQLClient) CreateIssue(ctx context.Context, input IssueCreateInput) (*Issue, error) {
-	genInput := generated.IssueCreateInput{
+	genInput := linear_graphql.IssueCreateInput{
 		Title:  &input.Title,
 		TeamId: input.TeamID,
 	}
@@ -288,7 +288,7 @@ func (c *GraphQLClient) CreateIssue(ctx context.Context, input IssueCreateInput)
 		genInput.DueDate = &input.DueDate
 	}
 
-	resp, err := generated.CreateIssue(ctx, c.gql, genInput)
+	resp, err := linear_graphql.CreateIssue(ctx, c.gql, genInput)
 	if err != nil {
 		return nil, fmt.Errorf("create issue: %w", err)
 	}
@@ -300,7 +300,7 @@ func (c *GraphQLClient) CreateIssue(ctx context.Context, input IssueCreateInput)
 }
 
 func (c *GraphQLClient) UpdateIssue(ctx context.Context, id string, input IssueUpdateInput) (*Issue, error) {
-	genInput := generated.IssueUpdateInput{}
+	genInput := linear_graphql.IssueUpdateInput{}
 	if input.Title != nil {
 		genInput.Title = input.Title
 	}
@@ -329,7 +329,7 @@ func (c *GraphQLClient) UpdateIssue(ctx context.Context, id string, input IssueU
 		genInput.CycleId = input.CycleID
 	}
 
-	resp, err := generated.UpdateIssue(ctx, c.gql, id, genInput)
+	resp, err := linear_graphql.UpdateIssue(ctx, c.gql, id, genInput)
 	if err != nil {
 		return nil, fmt.Errorf("update issue: %w", err)
 	}
@@ -341,7 +341,7 @@ func (c *GraphQLClient) UpdateIssue(ctx context.Context, id string, input IssueU
 }
 
 func (c *GraphQLClient) ArchiveIssue(ctx context.Context, id string) error {
-	_, err := generated.ArchiveIssue(ctx, c.gql, id)
+	_, err := linear_graphql.ArchiveIssue(ctx, c.gql, id)
 	if err != nil {
 		return fmt.Errorf("archive issue: %w", err)
 	}
@@ -349,15 +349,15 @@ func (c *GraphQLClient) ArchiveIssue(ctx context.Context, id string) error {
 }
 
 func (c *GraphQLClient) ListWorkflowStates(ctx context.Context, teamID string) ([]WorkflowState, error) {
-	var filter *generated.WorkflowStateFilter
+	var filter *linear_graphql.WorkflowStateFilter
 	if teamID != "" {
-		filter = &generated.WorkflowStateFilter{
-			Team: &generated.TeamFilter{
-				Id: &generated.IDComparator{Eq: &teamID},
+		filter = &linear_graphql.WorkflowStateFilter{
+			Team: &linear_graphql.TeamFilter{
+				Id: &linear_graphql.IDComparator{Eq: &teamID},
 			},
 		}
 	}
-	resp, err := generated.ListWorkflowStates(ctx, c.gql, filter)
+	resp, err := linear_graphql.ListWorkflowStates(ctx, c.gql, filter)
 	if err != nil {
 		return nil, fmt.Errorf("list workflow states: %w", err)
 	}
@@ -369,7 +369,7 @@ func (c *GraphQLClient) ListWorkflowStates(ctx context.Context, teamID string) (
 }
 
 func (c *GraphQLClient) ListComments(ctx context.Context, issueID string, first int, after string) ([]Comment, PageInfo, error) {
-	resp, err := generated.ListComments(ctx, c.gql, issueID, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListComments(ctx, c.gql, issueID, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, PageInfo{}, fmt.Errorf("list comments: %w", err)
 	}
@@ -391,7 +391,7 @@ func (c *GraphQLClient) ListComments(ctx context.Context, issueID string, first 
 }
 
 func (c *GraphQLClient) CreateComment(ctx context.Context, issueID, body string) (*Comment, error) {
-	resp, err := generated.CreateComment(ctx, c.gql, issueID, body)
+	resp, err := linear_graphql.CreateComment(ctx, c.gql, issueID, body)
 	if err != nil {
 		return nil, fmt.Errorf("create comment: %w", err)
 	}
@@ -407,7 +407,7 @@ func (c *GraphQLClient) CreateComment(ctx context.Context, issueID, body string)
 }
 
 func (c *GraphQLClient) AddIssueLabel(ctx context.Context, issueID, labelID string) error {
-	_, err := generated.AddIssueLabel(ctx, c.gql, issueID, labelID)
+	_, err := linear_graphql.AddIssueLabel(ctx, c.gql, issueID, labelID)
 	if err != nil {
 		return fmt.Errorf("add issue label: %w", err)
 	}
@@ -415,7 +415,7 @@ func (c *GraphQLClient) AddIssueLabel(ctx context.Context, issueID, labelID stri
 }
 
 func (c *GraphQLClient) RemoveIssueLabel(ctx context.Context, issueID, labelID string) error {
-	_, err := generated.RemoveIssueLabel(ctx, c.gql, issueID, labelID)
+	_, err := linear_graphql.RemoveIssueLabel(ctx, c.gql, issueID, labelID)
 	if err != nil {
 		return fmt.Errorf("remove issue label: %w", err)
 	}
@@ -424,7 +424,7 @@ func (c *GraphQLClient) RemoveIssueLabel(ctx context.Context, issueID, labelID s
 
 func (c *GraphQLClient) ListLabels(ctx context.Context, teamID string) ([]IssueLabel, error) {
 	// Fetch all labels (workspace + team) since both are valid for any issue.
-	resp, err := generated.ListLabels(ctx, c.gql, nil)
+	resp, err := linear_graphql.ListLabels(ctx, c.gql, nil)
 	if err != nil {
 		return nil, fmt.Errorf("list labels: %w", err)
 	}
@@ -436,16 +436,16 @@ func (c *GraphQLClient) ListLabels(ctx context.Context, teamID string) ([]IssueL
 }
 
 func (c *GraphQLClient) ListCycles(ctx context.Context, teamID string, includeAll bool, first int, after string) (*CycleListResult, error) {
-	filter := generated.CycleFilter{
-		Team: &generated.TeamFilter{
-			Id: &generated.IDComparator{Eq: &teamID},
+	filter := linear_graphql.CycleFilter{
+		Team: &linear_graphql.TeamFilter{
+			Id: &linear_graphql.IDComparator{Eq: &teamID},
 		},
 	}
 	if !includeAll {
 		notPast := false
-		filter.IsPast = &generated.BooleanComparator{Eq: &notPast}
+		filter.IsPast = &linear_graphql.BooleanComparator{Eq: &notPast}
 	}
-	resp, err := generated.ListCycles(ctx, c.gql, &filter, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListCycles(ctx, c.gql, &filter, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list cycles: %w", err)
 	}
@@ -464,7 +464,7 @@ func (c *GraphQLClient) ListCycles(ctx context.Context, teamID string, includeAl
 }
 
 func (c *GraphQLClient) GetCycle(ctx context.Context, id string) (*Cycle, error) {
-	resp, err := generated.GetCycle(ctx, c.gql, id)
+	resp, err := linear_graphql.GetCycle(ctx, c.gql, id)
 	if err != nil {
 		return nil, fmt.Errorf("get cycle: %w", err)
 	}
@@ -481,14 +481,14 @@ func (c *GraphQLClient) GetCycle(ctx context.Context, id string) (*Cycle, error)
 
 func (c *GraphQLClient) GetCycleByNumber(ctx context.Context, teamID string, number int) (*Cycle, error) {
 	numberFloat := float64(number)
-	filter := generated.CycleFilter{
-		Team: &generated.TeamFilter{
-			Id: &generated.IDComparator{Eq: &teamID},
+	filter := linear_graphql.CycleFilter{
+		Team: &linear_graphql.TeamFilter{
+			Id: &linear_graphql.IDComparator{Eq: &teamID},
 		},
-		Number: &generated.NumberComparator{Eq: &numberFloat},
+		Number: &linear_graphql.NumberComparator{Eq: &numberFloat},
 	}
 	first := 1
-	resp, err := generated.ListCycles(ctx, c.gql, &filter, &first, nil)
+	resp, err := linear_graphql.ListCycles(ctx, c.gql, &filter, &first, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get cycle by number: %w", err)
 	}
@@ -501,14 +501,14 @@ func (c *GraphQLClient) GetCycleByNumber(ctx context.Context, teamID string, num
 
 func (c *GraphQLClient) GetActiveCycle(ctx context.Context, teamID string) (*Cycle, error) {
 	active := true
-	filter := generated.CycleFilter{
-		Team: &generated.TeamFilter{
-			Id: &generated.IDComparator{Eq: &teamID},
+	filter := linear_graphql.CycleFilter{
+		Team: &linear_graphql.TeamFilter{
+			Id: &linear_graphql.IDComparator{Eq: &teamID},
 		},
-		IsActive: &generated.BooleanComparator{Eq: &active},
+		IsActive: &linear_graphql.BooleanComparator{Eq: &active},
 	}
 	first := 1
-	resp, err := generated.ListCycles(ctx, c.gql, &filter, &first, nil)
+	resp, err := linear_graphql.ListCycles(ctx, c.gql, &filter, &first, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get active cycle: %w", err)
 	}
@@ -520,7 +520,7 @@ func (c *GraphQLClient) GetActiveCycle(ctx context.Context, teamID string) (*Cyc
 }
 
 func (c *GraphQLClient) ListCycleIssues(ctx context.Context, cycleID string, first int, after string) (*IssueListResult, error) {
-	resp, err := generated.ListCycleIssues(ctx, c.gql, cycleID, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListCycleIssues(ctx, c.gql, cycleID, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list cycle issues: %w", err)
 	}
@@ -577,7 +577,7 @@ func (c *GraphQLClient) RemoveIssueCycle(ctx context.Context, issueID string) er
 	return nil
 }
 
-func cycleFromListNode(n generated.ListCyclesCyclesCycleConnectionNodesCycle) Cycle {
+func cycleFromListNode(n linear_graphql.ListCyclesCyclesCycleConnectionNodesCycle) Cycle {
 	return Cycle{
 		ID: n.Id, Name: derefStr(n.Name), Number: int(n.Number),
 		Description: derefStr(n.Description),
@@ -589,23 +589,23 @@ func cycleFromListNode(n generated.ListCyclesCyclesCycleConnectionNodesCycle) Cy
 }
 
 func (c *GraphQLClient) ListProjects(ctx context.Context, teamID, statusType string, first int, after string) (*ProjectListResult, error) {
-	var filter *generated.ProjectFilter
+	var filter *linear_graphql.ProjectFilter
 	if statusType != "" || teamID != "" {
-		filter = &generated.ProjectFilter{}
+		filter = &linear_graphql.ProjectFilter{}
 		if statusType != "" {
-			filter.Status = &generated.ProjectStatusFilter{
-				Type: &generated.StringComparator{Eq: &statusType},
+			filter.Status = &linear_graphql.ProjectStatusFilter{
+				Type: &linear_graphql.StringComparator{Eq: &statusType},
 			}
 		}
 		if teamID != "" {
-			filter.AccessibleTeams = &generated.TeamCollectionFilter{
-				Some: &generated.TeamFilter{
-					Id: &generated.IDComparator{Eq: &teamID},
+			filter.AccessibleTeams = &linear_graphql.TeamCollectionFilter{
+				Some: &linear_graphql.TeamFilter{
+					Id: &linear_graphql.IDComparator{Eq: &teamID},
 				},
 			}
 		}
 	}
-	resp, err := generated.ListProjects(ctx, c.gql, filter, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListProjects(ctx, c.gql, filter, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list projects: %w", err)
 	}
@@ -623,7 +623,7 @@ func (c *GraphQLClient) ListProjects(ctx context.Context, teamID, statusType str
 	}, nil
 }
 
-func projectFromListNode(n generated.ListProjectsProjectsProjectConnectionNodesProject) Project {
+func projectFromListNode(n linear_graphql.ListProjectsProjectsProjectConnectionNodesProject) Project {
 	var lead *User
 	if n.Lead != nil {
 		lead = &User{ID: n.Lead.Id, Name: n.Lead.Name, DisplayName: n.Lead.DisplayName, Email: n.Lead.Email, Active: n.Lead.Active}
@@ -641,7 +641,7 @@ func projectFromListNode(n generated.ListProjectsProjectsProjectConnectionNodesP
 }
 
 func (c *GraphQLClient) GetProject(ctx context.Context, id string) (*Project, error) {
-	resp, err := generated.GetProject(ctx, c.gql, id)
+	resp, err := linear_graphql.GetProject(ctx, c.gql, id)
 	if err != nil {
 		return nil, fmt.Errorf("get project: %w", err)
 	}
@@ -673,7 +673,7 @@ func (c *GraphQLClient) GetProject(ctx context.Context, id string) (*Project, er
 }
 
 func (c *GraphQLClient) ListProjectIssues(ctx context.Context, projectID string, first int, after string) (*IssueListResult, error) {
-	resp, err := generated.ListProjectIssues(ctx, c.gql, projectID, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListProjectIssues(ctx, c.gql, projectID, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list project issues: %w", err)
 	}
@@ -718,13 +718,13 @@ func (c *GraphQLClient) ListProjectIssues(ctx context.Context, projectID string,
 }
 
 func (c *GraphQLClient) ListInitiatives(ctx context.Context, status string, first int, after string) (*InitiativeListResult, error) {
-	var filter *generated.InitiativeFilter
+	var filter *linear_graphql.InitiativeFilter
 	if status != "" {
-		filter = &generated.InitiativeFilter{
-			Status: &generated.StringComparator{Eq: &status},
+		filter = &linear_graphql.InitiativeFilter{
+			Status: &linear_graphql.StringComparator{Eq: &status},
 		}
 	}
-	resp, err := generated.ListInitiatives(ctx, c.gql, filter, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListInitiatives(ctx, c.gql, filter, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list initiatives: %w", err)
 	}
@@ -742,7 +742,7 @@ func (c *GraphQLClient) ListInitiatives(ctx context.Context, status string, firs
 	}, nil
 }
 
-func initiativeFromListNode(n generated.ListInitiativesInitiativesInitiativeConnectionNodesInitiative) Initiative {
+func initiativeFromListNode(n linear_graphql.ListInitiativesInitiativesInitiativeConnectionNodesInitiative) Initiative {
 	var owner *User
 	if n.Owner != nil {
 		owner = &User{ID: n.Owner.Id, Name: n.Owner.Name, DisplayName: n.Owner.DisplayName, Email: n.Owner.Email, Active: n.Owner.Active}
@@ -757,7 +757,7 @@ func initiativeFromListNode(n generated.ListInitiativesInitiativesInitiativeConn
 }
 
 func (c *GraphQLClient) GetInitiative(ctx context.Context, id string) (*Initiative, error) {
-	resp, err := generated.GetInitiative(ctx, c.gql, id)
+	resp, err := linear_graphql.GetInitiative(ctx, c.gql, id)
 	if err != nil {
 		return nil, fmt.Errorf("get initiative: %w", err)
 	}
@@ -782,7 +782,7 @@ func (c *GraphQLClient) GetInitiative(ctx context.Context, id string) (*Initiati
 }
 
 func (c *GraphQLClient) ListInitiativeProjects(ctx context.Context, initiativeID string, first int, after string) (*ProjectListResult, error) {
-	resp, err := generated.ListInitiativeProjects(ctx, c.gql, initiativeID, nil, &first, strPtrOrNil(after))
+	resp, err := linear_graphql.ListInitiativeProjects(ctx, c.gql, initiativeID, nil, &first, strPtrOrNil(after))
 	if err != nil {
 		return nil, fmt.Errorf("list initiative projects: %w", err)
 	}
@@ -819,7 +819,7 @@ func (c *GraphQLClient) FileUpload(ctx context.Context, contentType, filename st
 		return nil, fmt.Errorf("file size %d exceeds maximum of %d bytes", size, math.MaxInt32)
 	}
 	sizeInt := int(size)
-	resp, err := generated.FileUpload(ctx, c.gql, contentType, filename, sizeInt)
+	resp, err := linear_graphql.FileUpload(ctx, c.gql, contentType, filename, sizeInt)
 	if err != nil {
 		return nil, fmt.Errorf("file upload: %w", err)
 	}

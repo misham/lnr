@@ -10,7 +10,7 @@ linters:
       check-type-assertions: true
   exclusions:
     paths:
-      - internal/api/generated
+      - internal/api/linear_graphql
     generated: strict
 
 formatters:

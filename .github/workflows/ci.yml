@@ -5,15 +5,50 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_call:
+    outputs:
+      artifact-run-id:
+        description: "Workflow run ID for downloading source artifact"
+        value: ${{ jobs.setup.outputs.run-id }}
 
 permissions:
   contents: read
 
 jobs:
-  check:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      run-id: ${{ github.run_id }}
     steps:
       - uses: actions/checkout@v6
+
+      - name: Upload source
+        uses: actions/upload-artifact@v7
+        with:
+          name: source
+          path: .
+          retention-days: 1
+
+  schema-check:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+
+      - name: Check for schema updates
+        run: make schema-check
+
+  check:
+    needs: schema-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
 
       - uses: actions/setup-go@v6
         with:
@@ -24,6 +59,19 @@ jobs:
 
       - name: Static checks
         run: make check
+
+  test:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
 
       - name: Tests
         run: make test

@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Run git-secrets if available
+if command -v git-secrets &>/dev/null; then
+    git secrets --pre_commit_hook -- "$@"
+fi
+
+# Fail if local schema is outdated (offline is OK — skip check)
+if curl -fsSL -o schema.graphql.upstream \
+    https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql 2>/dev/null; then
+    if ! diff -q schema.graphql schema.graphql.upstream >/dev/null 2>&1; then
+        rm -f schema.graphql.upstream
+        echo "ERROR: schema.graphql is outdated — run 'make schema && make generate'"
+        exit 1
+    fi
+    rm -f schema.graphql.upstream
+fi
+
+# Warn if generated code is out of sync with schema
+if git diff --cached --name-only | grep -qF 'schema.graphql'; then
+    if ! git diff --cached --name-only | grep -qF 'internal/api/linear_graphql/operations.gen.go'; then
+        echo "WARNING: schema.graphql changed but generated code was not updated"
+        echo "Run 'make generate' to regenerate client code"
+        exit 1
+    fi
+fi
+
+if git diff --cached --name-only | grep -qF 'internal/api/linear_graphql/operations.gen.go'; then
+    if ! git diff --cached --name-only | grep -qF 'schema.graphql'; then
+        echo "WARNING: generated code changed but schema.graphql was not updated"
+        echo "If this is intentional (e.g. formatting), use --no-verify to skip"
+        exit 1
+    fi
+fi
+
+# Run static checks
+make check

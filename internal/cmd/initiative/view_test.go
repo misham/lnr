@@ -34,7 +34,7 @@ func TestViewCmd_ShowsInitiative(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "Platform Reliability")
 	assert.Contains(t, out, "Active")

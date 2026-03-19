@@ -1,4 +1,4 @@
-.PHONY: build test lint fmt vet vulncheck check clean install-tools test-cover generate schema
+.PHONY: build test lint fmt vet vulncheck check clean install-tools test-cover generate schema schema-check setup
 
 MODULE  := github.com/misham/linear-cli
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -51,12 +51,31 @@ schema:
 	curl -fsSL -o schema.graphql \
 		https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql
 
+# Check if committed schema is outdated (warns but does not fail)
+schema-check:
+	@if [ ! -f schema.graphql ]; then \
+		echo "WARNING: schema.graphql not found — run 'make schema' to create it"; \
+		exit 0; \
+	fi; \
+	curl -fsSL -o schema.graphql.upstream \
+		https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql \
+		|| { rm -f schema.graphql.upstream; echo "WARNING: Could not fetch upstream schema — skipping check"; exit 0; }; \
+	if ! diff -q schema.graphql schema.graphql.upstream >/dev/null 2>&1; then \
+		echo "WARNING: schema.graphql is outdated — run 'make schema' to update"; \
+	fi; \
+	rm -f schema.graphql.upstream
+
 # Generate GraphQL client code
-generate: schema
+generate:
 	go generate ./...
 	@# Add omitempty to all JSON struct tags so nil fields are omitted instead of
 	@# being sent as explicit nulls (which the Linear API rejects in filter inputs).
-	perl -pi -e 's/`json:"([^"]+)"`/`json:"$$1,omitempty"`/g' internal/api/generated/operations.gen.go
+	perl -pi -e 's/`json:"([^"]+)"`/`json:"$$1,omitempty"`/g' internal/api/linear_graphql/operations.gen.go
+	gofumpt -w -modpath $(MODULE) internal/api/linear_graphql/
+
+# Set up local development environment
+setup: install-tools
+	git config core.hooksPath .githooks
 
 # Install development tools (versions pinned via go.mod tool directives)
 install-tools:
