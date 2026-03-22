@@ -3,13 +3,14 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. v1.0.0)"
+        required: true
 
 permissions:
   contents: write
-
-concurrency:
-  group: release
-  cancel-in-progress: true
 
 jobs:
   ci:
@@ -20,15 +21,21 @@ jobs:
   release:
     needs: ci
     runs-on: ubuntu-latest
-    env:
-      COMMIT_SHA: ${{ github.sha }}
-      VERSION: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+
+      - name: Set version for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          git tag "${RELEASE_VERSION}"
 
       - name: Validate secrets
         env:
@@ -39,27 +46,12 @@ jobs:
             exit 1
           fi
 
-      - name: Build binary
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           LNR_CLIENT_ID: ${{ secrets.LNR_CLIENT_ID }}
-          GOOS: darwin
-          GOARCH: arm64
-        run: |
-          make build \
-            VERSION="${VERSION}" \
-            COMMIT="${COMMIT_SHA:0:7}" \
-            CLIENT_ID="${LNR_CLIENT_ID}"
-          mv bin/lnr lnr-darwin-arm64
-
-      - name: Generate checksum
-        run: sha256sum lnr-darwin-arm64 > checksums.txt
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${VERSION}" \
-            --title "lnr ${VERSION}" \
-            --generate-notes \
-            lnr-darwin-arm64 \
-            checksums.txt
+          MODULE: github.com/misham/linear-cli
