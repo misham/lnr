@@ -1,7 +1,9 @@
 version: 2
 
 builds:
-  - env:
+  - main: ./cmd/lnr
+    binary: lnr
+    env:
       - CGO_ENABLED=0
     goos:
       - darwin
