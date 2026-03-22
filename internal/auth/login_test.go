@@ -12,11 +12,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/zalando/go-keyring"
+	"go.uber.org/goleak"
 	"golang.org/x/oauth2"
 )
 
+func TestMain(m *testing.M) {
+	keyring.MockInit()
+	goleak.VerifyTestMain(m)
+}
+
 func TestLogin_Success(t *testing.T) {
 	keyring.MockInit()
+
 	// Fake OAuth token endpoint
 	tokenSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp := map[string]any{
@@ -67,10 +74,15 @@ func TestLogin_Success(t *testing.T) {
 	state := authURL.Query().Get("state")
 	require.NotEmpty(t, state)
 
-	// Simulate OAuth callback
+	// Simulate OAuth callback — retry briefly since the server goroutine
+	// may not be serving yet when browser URL is set.
 	callbackURL := flow.CallbackURL() + "?code=auth-code-123&state=" + state
-	resp, err := http.Get(callbackURL) //nolint:gosec // test URL
-	require.NoError(t, err)
+	var resp *http.Response
+	require.Eventually(t, func() bool {
+		var getErr error
+		resp, getErr = http.Get(callbackURL) //nolint:gosec // test URL
+		return getErr == nil
+	}, 2*time.Second, 10*time.Millisecond, "callback server never became ready")
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -87,6 +99,7 @@ func TestLogin_Success(t *testing.T) {
 
 func TestLogin_StateMismatch(t *testing.T) {
 	keyring.MockInit()
+
 	store := NewKeyringTokenStore(t.TempDir())
 	browser := &FakeBrowserOpener{}
 
@@ -116,22 +129,25 @@ func TestLogin_StateMismatch(t *testing.T) {
 		return browser.URL() != ""
 	}, 5*time.Second, 10*time.Millisecond)
 
-	// Send callback with wrong state
+	// Send callback with wrong state — retry briefly for server readiness
 	callbackURL := flow.CallbackURL() + "?code=auth-code-123&state=wrong-state"
-	resp, err := http.Get(callbackURL) //nolint:gosec // test URL
-	require.NoError(t, err)
+	var resp *http.Response
+	require.Eventually(t, func() bool {
+		var getErr error
+		resp, getErr = http.Get(callbackURL) //nolint:gosec // test URL
+		return getErr == nil
+	}, 2*time.Second, 10*time.Millisecond, "callback server never became ready")
 	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	// Flow should still be running (waiting for correct callback)
 	// Cancel to end it
 	cancel()
-	err = <-errCh
+	err := <-errCh
 	require.Error(t, err)
 }
 
 func TestLogin_NoClientID(t *testing.T) {
-	keyring.MockInit()
 	flow := &LoginFlow{
 		OAuthConfig: &oauth2.Config{
 			ClientID: "",

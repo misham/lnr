@@ -34,7 +34,7 @@ func TestViewCmd_ShowsProject(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "Auth Rewrite")
 	assert.Contains(t, out, "In Progress")
@@ -64,7 +64,7 @@ func TestViewCmd_WithMilestones(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "Design Phase")
 	assert.Contains(t, out, "2026-03-15")

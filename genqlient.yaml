@@ -1,8 +1,8 @@
 schema: schema.graphql
 operations:
   - queries/*.graphql
-generated: internal/api/generated/operations.gen.go
-package: generated
+generated: internal/api/linear_graphql/operations.gen.go
+package: linear_graphql
 optional: pointer
 bindings:
   DateTime:

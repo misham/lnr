@@ -28,7 +28,7 @@ func TestIssuesCmd_ShowsIssues(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "ENG-123")
 	assert.Contains(t, out, "ENG-456")
@@ -46,7 +46,7 @@ func TestIssuesCmd_NoIssues(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "No issues found")
 }

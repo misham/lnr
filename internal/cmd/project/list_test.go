@@ -156,7 +156,7 @@ func TestListCmd_ShowsProjects(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "Auth Rewrite")
 	assert.Contains(t, out, "Dark Mode")
@@ -173,7 +173,7 @@ func TestListCmd_NoProjects(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "No projects found")
 }
@@ -226,7 +226,7 @@ func TestListCmd_Pagination(t *testing.T) {
 	err := cmd.ExecuteContext(context.Background())
 	require.NoError(t, err)
 
-	buf := f.IO.Out.(*bytes.Buffer)
+	buf, _ := f.IO.Out.(*bytes.Buffer)
 	out := buf.String()
 	assert.Contains(t, out, "Project A")
 	assert.Contains(t, out, "Project B")

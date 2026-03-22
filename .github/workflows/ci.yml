@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Upload source
+        uses: actions/upload-artifact@v7
+        with:
+          name: source
+          path: .
+          retention-days: 1
+
+  schema-check:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+
+      - name: Check for schema updates
+        run: make schema-check
+
+  check:
+    needs: schema-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Install tools
+        run: make install-tools
+
+      - name: Static checks
+        run: make check
+
+  test:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download source
+        uses: actions/download-artifact@v8
+        with:
+          name: source
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Tests
+        run: make test
